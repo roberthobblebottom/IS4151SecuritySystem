@@ -1,0 +1,30 @@
+<div class="card">
+    <div class="card-header">
+      <div class=row>
+        <div class="col">
+          <h3>Recent Intrusions</h3>
+        </div>
+        <div class="col-4 float-right">
+          <a class="btn btn-primary">View intrusion history</a>
+        </div>
+      </div>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for intrusion in intrusions %}
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col">
+            <h5>{{ intrusion[2] }}</h5>
+          </div>
+          <div class="col">
+            {{ intrusion[1] }}
+          </div>
+          <div class="col-3 float-right">
+            <a href="/intrusion/{{intrusion[0]}}" class="btn btn-primary">
+                View Video</a>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>

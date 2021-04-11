@@ -1,0 +1,26 @@
+
+{% if status == 0 %}
+<a href="#" class="card-link" onclick="unlock()">
+    <div class="card home-row bg-success">
+      <div class="card-body">
+        <h5 class="text-center">Security Status</h5>
+        <div style="font-size: 24px;">
+          <i class="d-flex justify-content-center fas fa-lock fa-10x"></i>
+          <p class="d-flex justify-content-center">Locked</p>
+        </div>
+      </div>
+    </div>
+</a>
+{% elif status == 1 %}
+<a href = "#" class="card-link" onclick="lock()">
+    <div class="card home-row bg-danger">
+      <div class="card-body">
+        <h5 class="text-center">Security Status</h5>
+        <div style="font-size: 24px;">
+          <i class="d-flex justify-content-center fas fa-unlock fa-10x"></i>
+          <p class="d-flex justify-content-center">Unlocked</p>
+        </div>
+      </div>
+    </div>
+</a>
+{% endif %}

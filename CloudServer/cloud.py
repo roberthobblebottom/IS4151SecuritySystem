@@ -1,10 +1,11 @@
 import connexion
-from flask import render_template, request, make_response
+from flask import render_template, request, make_response, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 import mysql.connector
 import json
 import string
+import requests
 import random
 
 app = connexion.App(__name__, specification_dir='./')
@@ -19,7 +20,7 @@ def upload_file(edgeconnector):
 		host='localhost',
 		user='root',
 		passwd='password',
-		database='simplehomesecure'
+		database='shs'
 	)
     address = request.remote_addr
     curr = conn.cursor()
@@ -40,15 +41,183 @@ def create_auth_code():
 		host='localhost',
 		user='root',
 		passwd='password',
-		database='simplehomesecure'
+		database='shs'
 	)
     letters = string.ascii_letters
     password = ''.join(random.choice(letters) for i in range(16))
 
 @app.route("/")
 def index():
-    return "Hello World"
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "SELECT edgename, ipaddress FROM edgeconnectors WHERE edgetype = 1"
+    cur.execute(sql)
+    results = cur.fetchall()
+    # get camera streams 
+    cur.close()
+    conn.close()
+    return render_template("index.html", cameras=results)
 
+@app.route("/statusbutton")
+def statusbutton():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql= "SELECT statusnumber FROM status ORDER by statusdate DESC LIMIT 1"
+    cur.execute(sql)
+    results = cur.fetchall()
+    statusnumber = results[0][0]
+    cur.close()
+    conn.close()
+    return render_template("statusbutton.html", status=statusnumber)
+
+@app.route("/devicepanel")
+def devicepanel():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "SELECT * FROM edgeconnectors"
+    cur.execute(sql)
+    devices = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("devicepanel.html", devices=devices)
+
+@app.route("/latestintrusions")
+def get_latest_intrusions():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "SELECT e.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) WHERE i.datetime > DATE_SUB(NOW(), INTERVAL '3' HOUR)"
+    cur.execute(sql)
+    intrusions = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("intrusionpanel.html", intrusions=intrusions)
+
+@app.route("/unlock")
+def unarm_system():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "INSERT INTO status (statusnumber) VALUES (1)"
+    cur.execute(sql)
+    conn.commit()
+    cur = conn.cursor()
+    sql = "SELECT ipaddress from edgeconnectors WHERE status = 1 AND edgetype = 0"
+    cur.execute(sql)
+    addresses = cur.fetchall()
+    conn.close()
+    for address in addresses:
+        response = requests.post("http://" + address[0] + ":5000/api/status/1")
+    return statusbutton()
+
+@app.route("/lock")
+def arm_system():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "INSERT INTO status (statusnumber) VALUES (0)"
+    cur.execute(sql)
+    conn.commit()
+    cur.close()
+    cur = conn.cursor()
+    sql = "SELECT ipaddress from edgeconnectors WHERE status = 1 AND edgetype = 0"
+    cur.execute(sql)
+    addresses = cur.fetchall()
+    conn.close()
+    for address in addresses:
+        response = requests.post("http://" + address[0] + ":5000/api/status/0")
+
+    return statusbutton()
+
+@app.route("/available/<edge>")
+def set_available(edge):
+    print("Set Available Called")
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    address = request.remote_addr
+    update_status = "UPDATE edgeconnectors SET status = 1, ipaddress = %s WHERE id = %s"
+    cur = conn.cursor()
+    cur.execute(update_status, (address,int(edge),))
+    conn.commit()
+    cur.close()
+
+    #get status and return
+    cur = conn.cursor()
+    sql= "SELECT statusnumber FROM status ORDER by statusdate DESC LIMIT 1"
+    cur.execute(sql)
+    results = cur.fetchall()
+    statusnumber = results[0][0]
+    cur.close()
+    conn.close()
+    
+    return { "status" : statusnumber }
+
+
+@app.route("/devices")
+def devices_screen():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "SELECT * FROM edgeconnectors"
+    cur.execute(sql)
+    devices = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("devices.html", devices=devices)
+
+@app.route("/unavailable/<edge>")
+def set_unavailable(edge):
+    print("Set Unavailable Called")
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    address = request.remote_addr
+    update_status = "UPDATE edgeconnectors SET status = 0, ipaddress = %s WHERE id = %s"
+    cur = conn.cursor()
+    cur.execute(update_status, (address,int(edge),))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return "OK", 200
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':

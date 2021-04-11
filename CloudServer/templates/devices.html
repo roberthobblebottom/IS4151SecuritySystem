@@ -39,9 +39,43 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
       </head>
     <body>
-        <ul class="nav nav-pills">
-            <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
-            <li class="nav-item"><a href="/devices" class="nav-link active">Devices</a></li>
-          </ul>
+        <div class = "container">
+          <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+              <span class="fs-4">Simple Home Security</span>
+            </a>
+      
+            <ul class="nav nav-pills">
+              <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+              <li class="nav-item"><a href="/devices" class="nav-link active">Devices</a></li>
+            </ul>
+          </header>
+        </div>
+        <div class="row">
+          <div class = "col">
+            <h2>Devices</h2>
+          </div>
+          <div class = "col float-right">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-device-form">
+              Add a device
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+
+        </div>
+        <div class="modal" id="add-device-form" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h5 class="modal-title">Add a device</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form action="/adddevice">
+              </form>
+            </div>
+          </div>
+        </div>
     </body>
 </html>
