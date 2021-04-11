@@ -20,7 +20,11 @@
                     <h5>{{device[1]}}</h5>
                 </div>
                 <div class="col-5">
-                    <p>Device Type: Camera</p>
+                    {% if device[3] == 0 %}
+                    <p>Device Type: SHS Module</p>
+                    {% elif device[3] == 1 %}
+                    <p>Device Type: External Camera</p>
+                    {% endif %}
                 </div>
                 <div class="col-4">
                     <p>Status:Active</p>
