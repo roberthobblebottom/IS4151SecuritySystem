@@ -17,8 +17,9 @@ radio.onReceivedValue(function (name: string, value: number) {
     } else if (name == "unarm") {
         state = 1
         music.playTone(Note.C, music.beat())
+    } else if (name == "alarm") {
+        music.playTone(Note.C5, music.breve())
     }
-    basic.showNumber(state)
 })
 
 basic.forever(function () {
