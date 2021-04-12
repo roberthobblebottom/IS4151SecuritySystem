@@ -26,13 +26,6 @@ basic.forever(function () {
     distance = grove.measureInCentimeters(DigitalPin.P2)
     if (distance <= 30) {
         if (state == 0) {
-            basic.showLeds(`
-            # . . . #
-            . # . # .
-            . . # . .
-            . . # . .
-            . # . # .
-            `)
             music.playTone(Note.G4,music.beat())
             radio.sendValue("int", 0)
             basic.pause(10000)

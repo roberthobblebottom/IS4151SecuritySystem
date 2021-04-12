@@ -6,7 +6,7 @@
                     Devices
                 </h3>
             </div>
-            <div class="col-4 float-right">
+            <div class="col-3 justify-content-end float-right">
                 <a class="btn btn-primary">View and edit devices</a>
             </div>
         </div>
@@ -19,15 +19,21 @@
                 <div class="col-3">
                     <h5>{{device[1]}}</h5>
                 </div>
-                <div class="col-5">
+                <div class="col-6">
                     {% if device[3] == 0 %}
                     <p>Device Type: SHS Module</p>
                     {% elif device[3] == 1 %}
                     <p>Device Type: External Camera</p>
                     {% endif %}
                 </div>
-                <div class="col-4">
-                    <p>Status:Active</p>
+                <div class="col-2">
+                    {% if device[4] == 0 %}
+                    <p>Status: Inactive</p>
+                    {% elif device[4] == 1 %}
+                    <p>Status: Active</p>
+                    {% else %}
+                    <p>Status not Tracked</p>
+                    {% endif %}
                 </div>
             </div>
         </li>

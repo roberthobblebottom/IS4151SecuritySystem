@@ -9,6 +9,7 @@ import requests
 import random
 
 app = connexion.App(__name__, specification_dir='./')
+app.app.static_folder = './'
 app.app.config['UPLOAD_FOLDER'] = "/files"
 headers = {'content-type' : 'application/json'}
 
@@ -111,6 +112,22 @@ def get_latest_intrusions():
     cur.close()
     conn.close()
     return render_template("intrusionpanel.html", intrusions=intrusions)
+
+@app.route("/intrusions")
+def get_intrusions():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "SELECT i.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) ORDER BY i.datetime DESC"
+    cur.execute(sql)
+    intrusions = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("intrusions.html", intrusions=intrusions)
 
 @app.route("/unlock")
 def unarm_system():
@@ -218,6 +235,64 @@ def set_unavailable(edge):
     conn.close()
 
     return "OK", 200
+
+@app.route("/adddevice", methods=["POST"])
+def add_device():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    name = request.form["newdevicename"]
+    ipaddress= request.form["ipaddress"]
+    devicetype = request.form["devicetype"]
+    cur = conn.cursor()
+    sql = "INSERT INTO edgeconnectors (edgename, ipaddress, edgetype, status) VALUES (%s, %s, %s, 0)"
+    cur.execute(sql, (name,ipaddress,devicetype,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect("/devices")
+
+@app.route("/deletedevice/<id>")
+def delete_device(id):
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = "DELETE FROM unauthentry WHERE edgeconnector = %s"
+    cur.execute(sql,(int(id),))
+    conn.commit()
+    sql = "DELETE FROM edgeconnectors WHERE id = %s"
+    cur.execute(sql,(int(id),))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect("/devices")
+
+@app.route("/editdevice", methods=["POST"])
+def edit_device():
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    did= request.form["editdeviceid"]
+    name = request.form["editdevicename"]
+    ipaddress= request.form["editipaddress"]
+    devicetype = request.form["editdevicetype"]
+    cur = conn.cursor()
+    sql = "UPDATE edgeconnectors SET edgename = %s, ipaddress = %s, edgetype = %s WHERE id = %s"
+    cur.execute(sql, (name,ipaddress,devicetype,did,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect("/devices")
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':

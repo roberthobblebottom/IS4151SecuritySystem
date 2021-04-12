@@ -4,12 +4,17 @@
         <div class="col">
           <h3>Recent Intrusions</h3>
         </div>
-        <div class="col-4 float-right">
-          <a class="btn btn-primary">View intrusion history</a>
+        <div class="col-3 float-right">
+          <a href="/intrusions" class="btn btn-primary">View intrusion history</a>
         </div>
       </div>
     </div>
     <ul class="list-group list-group-flush">
+      {% if not intrusions|length %}
+      <div class="card-body">
+        <p>No recent intrusions! You are safe.</p>
+      </div>
+      {% endif %}
       {% for intrusion in intrusions %}
       <li class="list-group-item">
         <div class="row">
@@ -20,7 +25,7 @@
             {{ intrusion[1] }}
           </div>
           <div class="col-3 float-right">
-            <a href="/intrusion/{{intrusion[0]}}" class="btn btn-primary">
+            <a href="/intrusion#intrusion{{intrusion[0]}}" class="btn btn-primary">
                 View Video</a>
           </div>
         </div>

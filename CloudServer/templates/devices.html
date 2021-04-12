@@ -41,23 +41,24 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="container-fluid">
     <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
       <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-        <span class="fs-4">Simple Home Security</span>
+        <span class="fs-4">SimpleHomeSecure</span>
       </a>
 
       <ul class="nav nav-pills">
         <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
         <li class="nav-item"><a href="/devices" class="nav-link active">Devices</a></li>
+        <li class="nav-item"><a href="/intrusions" class="nav-link">Alerts</a></li>
       </ul>
     </header>
 
     <div class="row">
-      <div class="col-10">
+      <div class="col-11">
         <h2>Devices</h2>
       </div>
-      <div class="col-2 justify-content-end">
+      <div class="col-1 justify-content-end">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-device-form">
           Add a device
         </button>
@@ -71,23 +72,27 @@
             <div class="col-3">
               <h5>{{device[1]}}</h5>
             </div>
-            <div class="col-3">
+            <div class="col-4">
               {% if device[3] == 0 %}
               <p>Device Type: SHS Module</p>
               {% elif device[3] == 1 %}
               <p>Device Type: External Camera</p>
+              {% else %}
+              <p>Device Type: Misc. Device</p>
               {% endif %}
             </div>
-            <div class="col-3">
+            <div class="col-4">
               {% if device[4] == 0 %}
               <p>Status: Inactive</p>
               {% elif device[4] == 1 %}
               <p>Status: Active</p>
+              {% else %} 
+              <p>Status not Tracked</p>
               {% endif %}
             </div>
-            <div class= "col-3">
-              <a href="/editdevice/{{device[0]}}" class="btn btn-secondary">Edit</a>
-              <a href="/deletedevice/{{device[0]}}" class="btn btn-danger">Delete</a>
+            <div class="col-1">
+              <button class="btn btn-primary float-right" data-bs-toggle="modal" data-bs-target="#edit-device-form" data-id="{{device[0]}}" data-devicename="{{device[1]}}" data-ipaddress="{{device[2]}}" data-devicetype="{{device[3]}}">Edit</button>
+              <button class="btn btn-danger float-right" data-bs-toggle="modal" data-bs-target="#delete-device" data-id="{{device[0]}}" data-devicename="{{device[1]}}">Delete</button>
             </div>
           </div>
         </li>
@@ -96,38 +101,118 @@
     </div>
   </div>
 
-  <div class="modal" id="add-device-form" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="delete-device" tabindex="-2" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete the device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p id="deletedevicemsg">Are you sure you want to delete?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <div id = "confirmdeletebutton"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="add-device-form" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Add a device</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <form action="/adddevice">
+        <form action="/adddevice" method="POST">
+          <div class="modal-body">
             <div class="mb-3">
               <label for="newdevicename" class="form-label">Name</label>
-              <input type="text" class="form-control" id="newdevicename">
+              <input type="text" class="form-control" id="newdevicename" name="newdevicename"
+                placeholder="My New Device" required>
             </div>
             <div class="mb-3">
               <label for="ipaddress" class="form-label">IP Address</label>
-              <input type="text" class="form-control" id="ipaddress">
+              <input type="text" class="form-control" id="ipaddress" name="ipaddress" placeholder="127.0.0.1" required>
             </div>
             <div class="mb-3">
               <label for="devicetype" class="form-label">Device Type</label>
-              <select class="form-select" id="devicetype">
+              <select class="form-select" id="devicetype" name="devicetype" required>
                 <option selected>Choose...</option>
                 <option value="0">SHS Module</option>
                 <option value="1">External Camera</option>
                 <option value="2">Other</option>
               </select>
             </div>
+          </div>
+          <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
         </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="edit-device-form" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit a device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form action="/editdevice" method="POST">
+          <input type="hidden" id="editdeviceid" name="editdeviceid">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="newdevicename" class="form-label">Name</label>
+              <input type="text" class="form-control" id="editdevicename" name="editdevicename"
+                placeholder="My New Device" required>
+            </div>
+            <div class="mb-3">
+              <label for="ipaddress" class="form-label">IP Address</label>
+              <input type="text" class="form-control" id="editipaddress" name="editipaddress" placeholder="127.0.0.1" required>
+            </div>
+            <div class="mb-3">
+              <label for="devicetype" class="form-label">Device Type</label>
+              <select class="form-select" id="editdevicetype" name="editdevicetype" required>
+                <option selected>Choose...</option>
+                <option value="0">SHS Module</option>
+                <option value="1">External Camera</option>
+                <option value="2">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+        </form>
       </div>
     </div>
   </div>
 </body>
-
+<script>
+  $('#delete-device').on('show.bs.modal', function(event) {
+    var button = $(event.relatedTarget);
+    var id = button.data('id');
+    var devicename = button.data('devicename');
+    console.log(id + " " + devicename);
+    $("#deletedevicemsg").text("Are you sure you want to delete "+ devicename +"?");
+    $('#confirmdeletebutton').html("<a href=\"/deletedevice/" + id + "\" class=\"btn btn-danger\">Confirm Delete</a>")
+  });
+  $('#edit-device-form').on('show.bs.modal', function(event) {
+    console.log("edit called");
+    var button = $(event.relatedTarget);
+    var id = button.data('id');
+    var ipaddress = button.data('ipaddress');
+    var devicename = button.data('devicename');
+    var devicetype = button.data('devicetype');
+    console.log(id + " " + devicename);
+    $("#editdeviceid").val(id);
+    $("#editipaddress").val(ipaddress);
+    $("#editdevicename").val(devicename);
+    $("#editdevicetype").val(devicetype);
+  });
+</script>
 </html>
