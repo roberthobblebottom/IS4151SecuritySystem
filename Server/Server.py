@@ -1,17 +1,17 @@
 import connexion
 from flask import render_template,request,url_for,redirect
 import secrets
+import os
+
 app = connexion.App(__name__, specification_dir='./')
 secret =  secrets.token_urlsafe(32)
 app.secret_key = secret
 #app.add_api('swagger.yml')
 # app.add_api('swaggerfull.yml')
 
-
-
 @app.route('/')
 def index():
-
+  os.system("python databaseInit.py")
   return render_template('login.html')
 
 @app.route('/login',methods=["POST"])
@@ -35,4 +35,3 @@ def dashboard(loginSuccess):
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=5000, debug=True)
-
