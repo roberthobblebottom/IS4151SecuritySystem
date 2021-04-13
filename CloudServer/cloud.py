@@ -7,11 +7,11 @@ import json
 import string
 import requests
 import random
-from twilio.rest import Client 
+from twilio.rest import Client
+import config
  
-account_sid = 'ACf29e6fa2fae2b1827c23537eba25c5e4' 
-auth_token = 'c8fae67c4073d4920ebf04c85d53f20d' 
-twilio_client = Client(account_sid, auth_token) 
+
+twilio_client = Client(config.account_sid, config.auth_token) 
 app = connexion.App(__name__, specification_dir='./')
 app.app.static_folder = './'
 app.app.config['UPLOAD_FOLDER'] = "/files"
