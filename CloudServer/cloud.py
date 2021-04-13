@@ -7,7 +7,11 @@ import json
 import string
 import requests
 import random
-
+from twilio.rest import Client 
+ 
+account_sid = 'ACf29e6fa2fae2b1827c23537eba25c5e4' 
+auth_token = 'c8fae67c4073d4920ebf04c85d53f20d' 
+twilio_client = Client(account_sid, auth_token) 
 app = connexion.App(__name__, specification_dir='./')
 app.app.static_folder = './'
 app.app.config['UPLOAD_FOLDER'] = "/files"
@@ -32,6 +36,13 @@ def upload_file(edgeconnector):
     conn.commit()
     curr.close()
     conn.close()
+    message = twilio_client.messages.create(  
+                              messaging_service_sid='MG1a02ec809a4c9a3c2ed93602b019a065', 
+                              body='[SimpleHomeSecure] There is a potential intrusion from ' + edgeconnector + '! Click on the link to take a look. http://192.168.1.110:5000',      
+                              to='+6593673358' 
+                          ) 
+ 
+    print(message.sid)
 
     return make_response('Records successfully created', 200)
 
@@ -106,7 +117,7 @@ def get_latest_intrusions():
 	    database='shs'
     )
     cur = conn.cursor()
-    sql = "SELECT e.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) WHERE i.datetime > DATE_SUB(NOW(), INTERVAL '3' HOUR)"
+    sql = "SELECT i.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) WHERE i.datetime > DATE_SUB(NOW(), INTERVAL '3' HOUR)"
     cur.execute(sql)
     intrusions = cur.fetchall()
     cur.close()
@@ -122,7 +133,7 @@ def get_intrusions():
 	    database='shs'
     )
     cur = conn.cursor()
-    sql = "SELECT i.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) ORDER BY i.datetime DESC"
+    sql = "SELECT i.id, e.edgename, DATE_FORMAT(i.datetime,'%e %b %Y %h:%i %p') as date, i.file, e.id FROM unauthentry i JOIN edgeconnectors e ON (i.edgeconnector = e.id) ORDER BY i.datetime DESC"
     cur.execute(sql)
     intrusions = cur.fetchall()
     cur.close()
@@ -199,6 +210,25 @@ def set_available(edge):
     conn.close()
     
     return { "status" : statusnumber }
+
+
+@app.route("/startalarm/<edgeconnector>")
+def start_alarm(edgeconnector):
+    # Alarm tentatively only lasts for 5s
+    conn = mysql.connector.connect(
+	    host='localhost',
+	    user='root',
+	    passwd='password',
+	    database='shs'
+    )
+    cur = conn.cursor()
+    sql = 'SELECT ipaddress from edgeconnectors WHERE id = %s'
+    cur.execute(sql, (int(edgeconnector),))
+    results = cur.fetchall()
+    ipaddress = results[0][0]
+    response = requests.post("http://" + ipaddress + ":5000/api/status/2")
+    return "OK", 200
+
 
 
 @app.route("/devices")

@@ -74,14 +74,18 @@
                             data-bs-target="#viewintrusion{{intrusion[0]}}" aria-expanded="false"
                             aria-controls="viewintrusion{{intrusion[0]}}">
                             View Video</button>
+                        <button class="btn btn-danger" type="button" onclick="soundAlarm({{intrusion[0]}},{{intrusion[4]}})">Sound Alarm</button>
+                        <div id="message{{intrusion[0]}}"></div>
                     </div>
                 </div>
                 <div class="collapse" id="viewintrusion{{intrusion[0]}}">
                     <div class="row">
-                        <video height="400" controls>
-                            <source src={{ url_for('static', filename=intrusion[3]) }} type="video/mp4">
-                            Your browser does not support the video tag.
-                          </video>
+                        <div class="mx-auto" style="width: 500px">
+                            <video height="400" controls>
+                                <source src={{ url_for('static', filename=intrusion[3]) }} type="video/mp4">
+                                Your browser does not support the video tag.
+                              </video>
+                        </div>
                     </div>
                   </div>
             </div>
@@ -91,4 +95,18 @@
     </div>
 </body>
 
+<script>
+    function soundAlarm(intrusionId, edgeId) {
+        $.ajax({
+        url: "/startalarm/"+edgeId,
+        type: "get",
+        success: function (response) {
+          $("#message" +intrusionId).html("<p>Alarm Sent</p>");
+        },
+        error: function (xhr) {
+          //Do Something to handle error
+        }
+      });
+    }
+</script>
 </html>
