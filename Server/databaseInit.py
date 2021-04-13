@@ -1,63 +1,62 @@
-import mysql.connector
+import psycopg2
 
-mydb = mysql.connector.connect(
+  
+
+mydb = psycopg2.connect(
   host='localhost',
-  user='root',
-  passwd='password',
-  database='security_system'
+  user='postgres',
+  password='password',
+  database='securitysystem'
 )
+mycursor = mydb.cursor()
 
-print(mydb)
+sql = """
+      SELECT to_regclass('schema_name.table_name');
+      """
+mycursor.execute(sql)
 
-myCursor = mydb.cursor()
+if mycursor.fetchone() != None :
+  print("tables already exist, exiting database initialisation")
+  exit();
+mycursor.execute("CREATE TYPE type AS ENUM('RaspberryPi','Microbit')")
 
-sql = '''
-      SELECT count(*)
-      FROM information_schema.TABLES
-      WHERE TABLE_NAME = 'edge' 
-      '''
-myCursor.execute(sql)
-myResult = myCursor.fetchall()
-if myResult > 0:
-  print("Skipping Database Initialisation")
-  exit()
-
-sql = '''CREATE TABLE IF NOT EXIST \'edge\'(
-        edge_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        address VARCHAR(100) NOT NULL,
-        name VARCHAR(50) NOT NULL,
-        type VARCHAR(30) NOT NULL,
-        isActive ENUM('True','False') NOT NULL,
+sql = '''CREATE TABLE  edge(
+        edge_name VARCHAR(50) NOT NULL PRIMARY KEY,
+        ip_address VARCHAR(30) NOT NULL,
+        type type NOT NULL,
+        is_active BOOLEAN NOT NULL
       );
       '''
-myCursor.execute(sql)
-print(myCursor.rowcount, 'record inserted.')
+mycursor.execute(sql)
+print(mycursor.rowcount, 'record inserted.')
 
-
-sql = '''CREATE TABLE IF NOT EXIST \'intrusion\'(
-        intrusion_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        edge_id INT NOT NULL,
-        dateTime DATETIME NOT NULL,
-        FOREIGN KEY (edge_id) REFERENCES edge(edge_id)
+sql = '''CREATE TABLE  intrusion(
+        edge_name VARCHAR(50) NOT NULL,
+        date_time timestamp NOT NULL,
+        PRIMARY KEY(edge_name, date_time),
+        FOREIGN KEY (edge_name) REFERENCES edge(edge_name)
       );
       '''
-myCursor.execute(sql)
-print(myCursor.rowcount, 'record inserted.')
+mycursor.execute(sql)
 
-sql = 'INSERT INTO people (fname, lname, timestamp) VALUES (%s, %s, now())'
-val = ('Kent', 'Brockman')
-myCursor.execute(sql, val)
-print(myCursor.rowcount, 'record inserted.')
+sql = 'INSERT INTO edge(edge_name,ip_address,type,is_active) VALUES (%s, %s, %s, %s)'
+val = ("EdgeProcessor1","1.1.1.1","RaspberryPi","True")
+mycursor.execute(sql, val)
+print(mycursor.rowcount, 'record inserted.')
 
 mydb.commit()
 
 
-
-# Retrieve all people records
-myCursor = mydb.cursor()
-myCursor.execute("SELECT * FROM edge")
-myresult = myCursor.fetchall()
-
-for x in myresult:
-  print(x)
-
+mycursor = mydb.cursor()
+mycursor.execute("SELECT * FROM edge")
+results = mycursor.fetchall()
+for result in results:
+  print(result)
+## Retrieve all people records
+#mycursor = mydb.cursor()
+#mycursor.execute("SELECT * FROM people")
+#myresult = mycursor.fetchall()
+#
+#for x in myresult:
+#  print(x)
+#
