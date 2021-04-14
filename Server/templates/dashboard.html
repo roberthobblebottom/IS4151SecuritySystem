@@ -6,7 +6,8 @@
     <h1>Dashboard</h1>
     {{loginSuccess}}
     <form action="/toggle" method="post">
-      {{actionText}}
+      <label name ="actionText">{{actionText}}</label>
+      </br>
       <button type="submit" 
               name ="toggleSecurityModeButton">{{toggleSecurityMode}}</button> 
     </form>

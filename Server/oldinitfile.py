@@ -11,7 +11,7 @@ mydb = psycopg2.connect(
 mycursor = mydb.cursor()
 
 sql = """
-      SELECT to_regclass('schema_name.table_name');
+      SELECT * FROM edge;
       """
 mycursor.execute(sql)
 
@@ -28,7 +28,6 @@ sql = '''CREATE TABLE  edge(
       );
       '''
 mycursor.execute(sql)
-print(mycursor.rowcount, 'record inserted.')
 
 sql = '''CREATE TABLE  intrusion(
         edge_name VARCHAR(50) NOT NULL,
@@ -39,10 +38,24 @@ sql = '''CREATE TABLE  intrusion(
       '''
 mycursor.execute(sql)
 
+sql = '''CREATE TABLE user(
+        username VARCHAR(50) NOT NULL PRIMARY,
+        password VARCHAR(100) NOT NULL,
+        isAlarm BOOLEAN NOT NULL,
+      );
+      '''
+mmycursor.execute(sql)
+
+
+
 sql = 'INSERT INTO edge(edge_name,ip_address,type,is_active) VALUES (%s, %s, %s, %s)'
 val = ("EdgeProcessor1","1.1.1.1","RaspberryPi","True")
 mycursor.execute(sql, val)
-print(mycursor.rowcount, 'record inserted.')
+
+sql = 'INSERT INTO user(username,password,isAlarm) VALUES (%s, %s, %s)'
+val = ("user","password",False)
+mycursor.execute(sql, val)
+
 
 mydb.commit()
 

@@ -1,7 +1,8 @@
 import connexion
-from flask import render_template,request,url_for,redirect
+from flask import render_template,request,url_for,redirect,session
 import secrets
 import os
+import psycopg2
 app = connexion.App(__name__, specification_dir='./')
 secret =  secrets.token_urlsafe(32)
 app.secret_key = secret
@@ -10,7 +11,6 @@ app.secret_key = secret
 
 @app.route('/')
 def index():
-  os.system("python databaseInit.py")
   return render_template('login.html')
 
 @app.route('/login',methods=["POST"])
@@ -18,7 +18,25 @@ def login():
   if request.method == "POST":
     username = request.form.get("uname")
     password = request.form.get("psw")
-    if username == "user" and password == "password": 
+    mydb = psycopg2.connect(
+      host='localhost',
+      user='postgres',
+      password='password',
+      database='securitysystem'
+    )
+    mycursor = mydb.cursor()
+    sql = """
+           SELECT username,password,isAlarm FROM user1 WHERE username = %s AND password = %s;
+          """
+    query = (username,password)
+    mycursor.execute(sql,query)
+    result = mycursor.fetchone();
+    print(result)
+    if result is not None: 
+      session['isLogin'] = True
+      session['username'] = username
+      session['isAlarm'] = result[2]
+      print(session[isAlarm])
       return redirect(url_for("dashboard", loginSuccess = True))
     else :
       return render_template("login.html",result="login failed")
@@ -37,17 +55,18 @@ def dashboard(loginSuccess):
 def toggleAlarmInDashboard():
   on = "Alarm is turned on."
   off = "Alarm is turned off"
+  print(request.form.get("actionText"))
   if request.form.get("actionText") == on:
       print("toggle: true")
       return render_template("dashboard.html",
                               toggleSecurityMode = "Activate Security",
                               actionText = off)
-  elif request.form.get("actionText") == off:
+  else:
       print("toggle false")
-      return render_template("dashboard.hmtl",
+      return render_template("dashboard.html",
                             toggleSecurityMode = "Deactivate Security",
                             actionText= on)
-  return render_template("dashboard.hmtl",
+  return render_template("dashboard.html",
                             toggleSecurityMode = request.form.get("toggleSecurityMode"),
                             actionText= request.form.get("actionText"))
 @app.route('/toggle',methods={"post"})
