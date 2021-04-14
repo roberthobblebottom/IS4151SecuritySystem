@@ -33,8 +33,7 @@ def dashboard(loginSuccess):
    else: 
      print("loginSuccess string gone")
      return render_template("dashboard.html") 
-
-@app.route('/dashboard')
+@app.route("/dashboard")
 def toggleAlarmInDashboard():
   on = "Alarm is turned on."
   off = "Alarm is turned off"
