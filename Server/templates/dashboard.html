@@ -5,8 +5,9 @@
   <body>
     <h1>Dashboard</h1>
     {{loginSuccess}}
-    <form action="/" method="post">
-      <button type="button" name ="toggleSecurityModeButton">Toggle Security Mode</button> 
+    <form action="/toggle" method="post">
+      <button type="submit" 
+              name ="toggleSecurityModeButton">{{toggleSecurityMode}}</button> 
     </form>
   </body>
 </html>
