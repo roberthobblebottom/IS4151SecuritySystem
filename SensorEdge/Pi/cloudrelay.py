@@ -7,6 +7,8 @@ from subprocess import call
 filePath = '/home/pi/Documents/projectgg/files'
 EDGE_CONNECTOR_NAME = "surveillancecamera"
 
+# NOTE: THIS REQUIRES MP4BOX. TO MAKE IT WORK YOU HAVE TO INSTALL using `sudo apt install -y gpac` 
+
 try:
     conn = sqlite3.connect('shs')
 

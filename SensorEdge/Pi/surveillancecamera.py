@@ -1,9 +1,13 @@
 import time
 from datetime import datetime
-from picamera import PiCamera
+import picamera
 from queue import Queue
 import sqlite3
 import serial
+import socket
+from threading import Thread
+import requests
+import io
 
 filePath = '/home/pi/Documents/projectgg/files'
 
@@ -15,23 +19,62 @@ DB_NAME = 'shs'
 #Connection to DB
 conn = sqlite3.connect(DB_NAME)
 
-camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = 30
 
 def handleMessage(smsg):
     params = smsg.split()
     if params[1] == "int":
-        print("taking video")
+        queue2.put("record")
+#         print("taking video")
+#         fileName =  datetime.now().strftime("%Y%m%d%H%M%S") + '.h264'
+#         camera.start_recording(filePath + "/" + fileName)
+#         time.sleep(5)
+#         camera.stop_recording()
+#         curr = conn.cursor()
+#         curr.execute("INSERT INTO intrusions (edgeconnector, videofile) VALUES (?,?)", (int(params[0]), fileName))
+#         conn.commit()
+#         curr.close()
+#         print("Intrusion Detected, Video File:", fileName)
+        
+def videoCamera():
+    with picamera.PiCamera() as camera:
+        camera.resolution = (640, 480)
+        camera.framerate = 30
+        camera.rotation = 90
+        stream = picamera.PiCameraCircularIO(camera, seconds=20)
+        camera.start_recording(stream, format='h264')
+        try:
+            while not stop:
+                camera.wait_recording(1)
+                while not queue2.empty():
+                    param2 = queue2.get()
+                    if param2 == "record":
+                        print("Intrusion Detected, Recording")
+                        # Keep recording for 10 seconds and only then write the
+                        # stream to disk
+                        camera.wait_recording(10)
+                        write_video(stream)
+        finally:
+            camera.stop_recording()
+        
+def write_video(stream):
+    print('Writing video!')
+    with stream.lock:
+        # Find the first header frame in the video
+        for frame in stream.frames:
+            if frame.frame_type == picamera.PiVideoFrameType.sps_header:
+                stream.seek(frame.position)
+                break
+        # Write the rest of the stream to disk
         fileName =  datetime.now().strftime("%Y%m%d%H%M%S") + '.h264'
-        camera.start_recording(filePath + "/" + fileName)
-        time.sleep(5)
-        camera.stop_recording()
-        curr = conn.cursor()
-        curr.execute("INSERT INTO intrusions (edgeconnector, videofile) VALUES (?,?)", (int(params[0]), fileName))
-        conn.commit()
-        curr.close()
-        print("Intrusion Detected, Video File:", fileName)
+        with io.open(filePath + "/" + fileName, 'wb') as output:
+            output.write(stream.read())
+            print("File Complete! Written to", fileName)
+            conn2 = sqlite3.connect(DB_NAME)
+            curr = conn2.cursor()
+            curr.execute("INSERT INTO intrusions (edgeconnector, videofile) VALUES (?,?)", (1, fileName))
+            conn2.commit()
+            curr.close()
+            conn2.close()
 
 def socketListener():
     host = socket.gethostname()
@@ -52,20 +95,33 @@ def socketListener():
             if not data:
                 break
         print("Message received:", message)
-        queue.add(message)
+        queue.put(message)
         client_socket.close()
 
 def serialListener():
     state = 0
+    print("Telling Cloud we are available")
+    result = requests.get("http://192.168.1.110:5000/available/1")
+    state = result.json().get("status")
+    print(state)
+    if state == 0:
+        ser.write(str.encode("arm$0\r\n"))
+    elif state == 1:
+        ser.write(str.encode("unarm$1\r\n"))
     while not stop:
         while not queue.empty():
             param = queue.get()
             if param == "arm":
                 state = 0
-                ser.writeLine(str.encode("arm$0/r/n"))
+                print("arm called")
+                ser.write(str.encode("arm$0\r\n"))
             elif param == "unarm":
                 state = 1
-                ser.writeLine(str.encode("unarm$1/r/n"))
+                print("unarm called")
+                ser.write(str.encode("unarm$1\r\n"))
+            elif param == "alarm":
+                print("alarm called")
+                ser.write(str.encode("alarm$2\r\n"))
         if state == 0:
             lines = ser.readlines()
             if lines:
@@ -74,17 +130,31 @@ def serialListener():
                    if len(smsg) > 0:
                        handleMessage(smsg) 
 
+
 try:
-    print("Edge Connector Online")
+    print("Camera Online")
+
     print("Listening on /dev/ttyACM0... Press CTRL+C to exit")
     print("Also listening on port 6789 for web services")
     queue = Queue()
+    queue2 = Queue()
     ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=1)
+    #ser.write(str.encode("test\r\n"))
+    t1 = Thread(target = videoCamera)
+    t2 = Thread(target = socketListener)
+    t1.setDaemon(True)
+    t2.setDaemon(True)
+    t1.start()
+    t2.start()
     serialListener()
 except KeyboardInterrupt:
     stop = True
     if ser.is_open:
+        ser.write(str.encode("shutdown$2\r\n"))
         ser.close()
     # conn.close()
     print("Program terminated!")
+finally:
+    print("Cleaning Up")
+    result = requests.get("http://192.168.1.110:5000/unavailable/1")
     

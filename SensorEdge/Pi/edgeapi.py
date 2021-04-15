@@ -33,15 +33,19 @@ def status(statusNumber):
     port = 6789
     s = socket.socket()
     s.connect((host, port))
-    if status == 0:
+    if statusNumber == 0:
         message = "arm"
         s.send(message.encode("utf-8"))
         s.close()
         return make_response("Armed", 200)
-    elif status == 1:
+    elif statusNumber == 1:
         message = "unarm"
         s.send(message.encode("utf-8"))
         s.close()
         return make_response("Unarmed", 200)
-    else
+    elif statusNumber == 2:
+        message = "alarm"
+        s.send(message.encode("utf-8"))
+        s.close()
+    else:
         return make_response("Error", 400)
