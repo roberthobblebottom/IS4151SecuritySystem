@@ -25,6 +25,7 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
     } else if (list[0] == "alarm") {
         radio.sendValue("alarm", 0)
     } else if (list[0] == "shutdown") {
+        state = -1
         radio.sendValue("shutdown", -1)
     }
 })
