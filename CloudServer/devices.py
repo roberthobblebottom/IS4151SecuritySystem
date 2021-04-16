@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, request
 import mysql.connector
 
 device_blueprint = Blueprint('device_blueprint', __name__)

@@ -11,22 +11,25 @@ import config
 from devices import device_blueprint
 from intrusions import intrusion_blueprint
 from deviceapi import deviceapi_blueprint
+from settings import settings_blueprint
  
 
 twilio_client = Client(config.account_sid, config.auth_token) 
 app = Flask(__name__)
-app.static_folder = './'
+app.static_folder = 'assets'
 app.config['UPLOAD_FOLDER'] = "/files"
 headers = {'content-type' : 'application/json'}
 app.register_blueprint(device_blueprint)
 app.register_blueprint(intrusion_blueprint)
 app.register_blueprint(deviceapi_blueprint, url_prefix="/api")
+app.register_blueprint(settings_blueprint)
 
 
 @app.route("/upload/<edgeconnector>", methods=['POST'])
 def upload_file(edgeconnector):
     f = request.files['file']
-    f.save(secure_filename(f.filename))
+    print(f.filename)
+    f.save("assets/" + secure_filename(f.filename))
     conn = mysql.connector.connect(
 		host='localhost',
 		user='root',
@@ -40,29 +43,21 @@ def upload_file(edgeconnector):
     sql = """INSERT INTO unauthentry(edgeconnector, datetime, file) VALUES (%s,NOW(),%s)"""
     curr.execute(sql, (int(edgeconnector), f.filename,))
     conn.commit()
+    sql = """SELECT edgename FROM edgeconnectors WHERE id = %s"""
+    curr.execute(sql,(int(edgeconnector),))
+    edgename = curr.fetchall()[0][0]
+    sql = """SELECT settingvalue FROM settings WHERE settingname = \"mobilenumber\""""
+    curr.execute(sql)
+    mobilenumber = curr.fetchall()[0][0]
     curr.close()
     conn.close()
     message = twilio_client.messages.create(  
-                              messaging_service_sid='MG1a02ec809a4c9a3c2ed93602b019a065', 
-                              body='[SimpleHomeSecure] There is a potential intrusion from ' + edgeconnector + '! Click on the link to take a look. http://192.168.1.110:5000',      
-                              to='+6593673358' 
+                             messaging_service_sid=config.messaging_service_sid, 
+                              body='[SimpleHomeSecure] There is a potential intrusion from ' + edgename + '! Click on the link to take a look. http://192.168.1.110:5000',      
+                              to=mobilenumber
                           ) 
- 
-    print(message.sid)
 
     return make_response('Records successfully created', 200)
-
-@app.route("/auth", methods=['GET'])
-def create_auth_code():
-    # generates an authentication code and stores it in the database, then returns the auth as a json object
-    conn = mysql.connector.connect(
-		host='localhost',
-		user='root',
-		passwd='password',
-		database='shs'
-	)
-    letters = string.ascii_letters
-    password = ''.join(random.choice(letters) for i in range(16))
 
 @app.route("/")
 def index():
