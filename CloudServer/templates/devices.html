@@ -73,13 +73,7 @@
               <h5>{{device[1]}}</h5>
             </div>
             <div class="col-4">
-              {% if device[3] == 0 %}
-              <p>Device Type: SHS Module</p>
-              {% elif device[3] == 1 %}
-              <p>Device Type: External Camera</p>
-              {% else %}
-              <p>Device Type: Misc. Device</p>
-              {% endif %}
+              <p>Device Type: {{device[5]}}</p>
             </div>
             <div class="col-4">
               {% if device[4] == 0 %}
@@ -141,9 +135,9 @@
               <label for="devicetype" class="form-label">Device Type</label>
               <select class="form-select" id="devicetype" name="devicetype" required>
                 <option selected>Choose...</option>
-                <option value="0">SHS Module</option>
-                <option value="1">External Camera</option>
-                <option value="2">Other</option>
+                {% for devicetype in devicetypes %}
+                <option value="{{devicetype[0]}}">{{devicetype[1]}}</option>
+                {% endfor %}
               </select>
             </div>
           </div>
@@ -178,9 +172,9 @@
               <label for="devicetype" class="form-label">Device Type</label>
               <select class="form-select" id="editdevicetype" name="editdevicetype" required>
                 <option selected>Choose...</option>
-                <option value="0">SHS Module</option>
-                <option value="1">External Camera</option>
-                <option value="2">Other</option>
+                {% for devicetype in devicetypes %}
+                <option value="{{devicetype[0]}}">{{devicetype[1]}}</option>
+                {% endfor %}
               </select>
             </div>
           </div>
