@@ -1,0 +1,52 @@
+swagger: "2.0"
+info:
+  description: This is the swagger file that goes with SHS Camera Module
+  version: "1.0.0"
+  title: Camera module
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+basePath: "/api"
+paths:
+  /status/{statusNumber}:
+    post:
+      operationId: "edgeapi.status"
+      summary: "Arms or unarms the status"
+      parameters:
+        - name: statusNumber
+          in: path
+          description: Status id. 0 for armed, 1 for unarmed.
+          required: True
+          type : "integer"
+      responses:
+        200:
+          description: "Successfully set"
+        400:
+          description: "Invalid Status Number"
+  /settings/{gad}/{fad}/{md}:
+    post:
+      operationId: "edgeapi.settings"
+      summary: "Changes Settings"
+      parameters:
+        - name: gad
+          in: path
+          description: Global Alarm Duration in Seconds
+          required: True
+          type : "integer"
+        - name: fad
+          in: path
+          description: Forced Alarm Duration in Seconds
+          required: True
+          type : "integer"
+        - name: md
+          in: path
+          description: Motion id. 1 for motion active, 0 for inactive.
+          required: True
+          type : "integer"
+      responses:
+        200:
+          description: "Successfully set"
+        400:
+          description: "Invalid Status Number"

@@ -16,8 +16,11 @@ stop = False
 # DB_NAME
 DB_NAME = 'shs'
 
-#Connection to DB
-conn = sqlite3.connect(DB_NAME)
+#Queues
+queue = Queue()
+queue2 = Queue()
+
+
 
 
 def handleMessage(smsg):
@@ -97,17 +100,45 @@ def socketListener():
         print("Message received:", message)
         queue.put(message)
         client_socket.close()
+        
+def sendSettings():
+    print("Settings called")
+    #Connection to DB
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT globalalarmtime, forcedalarmtime, motiondetection FROM settings ORDER by updated DESC LIMIT 1")
+    results = cur.fetchall()[0]
+    print (results[0], results[1], results[2])
+    ser.write(str.encode("gad$"+str(results[0])+"\r\n"))
+    time.sleep(0.2) #wait for everything to send
+    ser.write(str.encode("fad$"+str(results[1])+"\r\n"))
+    time.sleep(0.2)
+    ser.write(str.encode("md$"+str(results[2])+"\r\n"))
+    time.sleep(0.2)
 
 def serialListener():
     state = 0
     print("Telling Cloud we are available")
-    result = requests.get("http://192.168.1.110:5000/available/1")
+    result = requests.get("http://192.168.1.110:5000/api/available")
+    globalalarmduration = result.json().get("globalalarmduration")
+    print("Global Alarm:",globalalarmduration)
+    ser.write(str.encode("gad$"+globalalarmduration+"\r\n"))
+    time.sleep(0.2) #wait for everything to send
+    forcedalarmduration = result.json().get("forcedalarmduration")
+    print("Forced Alarm:",forcedalarmduration)
+    ser.write(str.encode("fad$"+forcedalarmduration+"\r\n"))
+    time.sleep(0.2)
+    motiondetection = result.json().get("motiondetection")
+    print("Motion Detection:",motiondetection) 
+    ser.write(str.encode("md$"+motiondetection+"\r\n"))
+    time.sleep(0.2)
     state = result.json().get("status")
     print(state)
     if state == 0:
         ser.write(str.encode("arm$0\r\n"))
     elif state == 1:
         ser.write(str.encode("unarm$1\r\n"))
+    
     while not stop:
         while not queue.empty():
             param = queue.get()
@@ -122,6 +153,8 @@ def serialListener():
             elif param == "alarm":
                 print("alarm called")
                 ser.write(str.encode("alarm$2\r\n"))
+            elif param == "setting":
+                sendSettings()
         if state == 0:
             lines = ser.readlines()
             if lines:
@@ -136,8 +169,7 @@ try:
 
     print("Listening on /dev/ttyACM0... Press CTRL+C to exit")
     print("Also listening on port 6789 for web services")
-    queue = Queue()
-    queue2 = Queue()
+    
     ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=1)
     #ser.write(str.encode("test\r\n"))
     t1 = Thread(target = videoCamera)
@@ -156,5 +188,5 @@ except KeyboardInterrupt:
     print("Program terminated!")
 finally:
     print("Cleaning Up")
-    result = requests.get("http://192.168.1.110:5000/unavailable/1")
+    result = requests.get("http://192.168.1.110:5000/api/unavailable")
     

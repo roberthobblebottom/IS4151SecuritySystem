@@ -85,11 +85,6 @@
                             +65 for Singapore</small>
                     </div>
                     <br />
-                    <div class="form-check form-switch">
-                        <label class="form-check-label" for="movealarm"> Alert if SimpleHomeSecure devices move when armed. Turn this on if your devices are bolted down and would not move under normal circumstances.</label>
-                        <input class="form-check-input" type="checkbox" id="movealarm" name = "movealarm" value="1" {% if movealarm == 1 %} checked {% endif %}>
-                    </div>
-                    <br />
                     <button type="submit" class="btn btn-primary mb-3">Save Changes</button>
                     {% if request.args.get('changed') %}
                     <br />

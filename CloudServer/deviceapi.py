@@ -42,7 +42,7 @@ def set_available_ipaddress():
     address = request.remote_addr
     update_status = "UPDATE edgeconnectors SET status = 1 WHERE ipaddress = %s"
     cur = conn.cursor()
-    cur.execute(update_status, (address,))
+    cur.execute(update_status, (str(address),))
     conn.commit()
     cur.close()
 
@@ -52,10 +52,25 @@ def set_available_ipaddress():
     cur.execute(sql)
     results = cur.fetchall()
     statusnumber = results[0][0]
+    globalalarmduration = "0"
+    forcedalarmduration = "0"
+    motiondetection = "0"
+    sql = "SELECT * FROM settings"
+    cur.execute(sql)
+    settingresult = cur.fetchall()
+    for setting in settingresult:
+        print(setting[0],setting[1])
+        if setting[0] == "defaultalarm":
+            print(setting[1])
+            globalalarmduration = setting[1]
+        elif setting[0] == "forcedalarm":
+            forcedalarmduration = setting[1]
+        elif setting[0] == "movealarm":
+            motiondetection = setting[1] 
     cur.close()
     conn.close()
     
-    return { "status" : statusnumber }
+    return { "status" : statusnumber, "globalalarmduration" : globalalarmduration, "forcedalarmduration" : forcedalarmduration, "motiondetection" : motiondetection }
 
 
 @deviceapi_blueprint.route("/unavailable")
